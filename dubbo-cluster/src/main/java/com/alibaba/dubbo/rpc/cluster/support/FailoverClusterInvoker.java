@@ -56,6 +56,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
         List<Invoker<T>> copyinvokers = invokers;
         checkInvokers(copyinvokers, invocation);
         String methodName = RpcUtils.getMethodName(invocation);
+        //默认重试两次
         int len = getUrl().getMethodParameter(methodName, Constants.RETRIES_KEY, Constants.DEFAULT_RETRIES) + 1;
         if (len <= 0) {
             len = 1;

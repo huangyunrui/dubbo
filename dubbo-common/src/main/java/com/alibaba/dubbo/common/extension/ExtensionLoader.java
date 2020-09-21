@@ -293,19 +293,23 @@ public class ExtensionLoader<T> {
     public T getExtension(String name) {
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Extension name == null");
+        //获取默认实现
         if ("true".equals(name)) {
             return getDefaultExtension();
         }
+        // 从缓存中获取实例
         Holder<Object> holder = cachedInstances.get(name);
         if (holder == null) {
             cachedInstances.putIfAbsent(name, new Holder<Object>());
             holder = cachedInstances.get(name);
         }
+        // 真正获取实例对象
         Object instance = holder.get();
         if (instance == null) {
             synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
+                    //同步创建实例对象，并存入缓存，懒加载机制
                     instance = createExtension(name);
                     holder.set(instance);
                 }
@@ -498,6 +502,7 @@ public class ExtensionLoader<T> {
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
+                    //通过反射机制实例化对象
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
             }
@@ -551,7 +556,9 @@ public class ExtensionLoader<T> {
             throw new IllegalStateException("No such extension \"" + name + "\" for " + type.getName() + "!");
         return clazz;
     }
-
+    /*
+    * 加载类文件
+    * */
     private Map<String, Class<?>> getExtensionClasses() {
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {

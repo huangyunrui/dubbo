@@ -42,9 +42,12 @@ public class FailfastClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
     @Override
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
+        // 取出可用调用服务列表
         checkInvokers(invokers, invocation);
+        //通过负载均衡算法选取一个节点
         Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
         try {
+            //执行调用
             return invoker.invoke(invocation);
         } catch (Throwable e) {
             if (e instanceof RpcException && ((RpcException) e).isBiz()) { // biz exception.

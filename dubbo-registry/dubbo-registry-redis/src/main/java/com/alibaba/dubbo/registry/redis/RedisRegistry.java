@@ -147,10 +147,12 @@ public class RedisRegistry extends FailbackRegistry {
         this.root = group;
 
         this.expirePeriod = url.getParameter(Constants.SESSION_TIMEOUT_KEY, Constants.DEFAULT_SESSION_TIMEOUT);
+        // 定时发送心跳包
         this.expireFuture = expireExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
+                    //发送心跳包，防止key过期
                     deferExpired(); // Extend the expiration time
                 } catch (Throwable t) { // Defensive fault tolerance
                     logger.error("Unexpected exception occur at defer expire time, cause: " + t.getMessage(), t);
@@ -167,6 +169,7 @@ public class RedisRegistry extends FailbackRegistry {
                 try {
                     for (URL url : new HashSet<URL>(getRegistered())) {
                         if (url.getParameter(Constants.DYNAMIC_KEY, true)) {
+                            //向rediss设置服务信息
                             String key = toCategoryPath(url);
                             if (jedis.hset(key, url.toFullString(), String.valueOf(System.currentTimeMillis() + expirePeriod)) == 1) {
                                 jedis.publish(key, Constants.REGISTER);
@@ -274,6 +277,7 @@ public class RedisRegistry extends FailbackRegistry {
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    // 向redis设置值，并推送消息
                     jedis.hset(key, value, expire);
                     jedis.publish(key, Constants.REGISTER);
                     success = true;
@@ -337,6 +341,7 @@ public class RedisRegistry extends FailbackRegistry {
             Notifier newNotifier = new Notifier(service);
             notifiers.putIfAbsent(service, newNotifier);
             notifier = notifiers.get(service);
+            //启动通知线程
             if (notifier == newNotifier) {
                 notifier.start();
             }
@@ -348,6 +353,7 @@ public class RedisRegistry extends FailbackRegistry {
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    //拉取所有注册信息
                     if (service.endsWith(Constants.ANY_VALUE)) {
                         admin = true;
                         Set<String> keys = jedis.keys(service);
